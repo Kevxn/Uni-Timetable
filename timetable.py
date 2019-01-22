@@ -1,6 +1,8 @@
 import sys
 import json
 import requests
+import tabulate
+from datetime import datetime, timedelta
 
 s = requests.Session()
 
@@ -83,10 +85,37 @@ data = json.loads(get_json.strip()[:-1])
 
 timetable = parse_timetable_data(data, days_data)
 
+
+_days = {
+    "Monday": 0,
+    "Tuesday": 1,
+    "Wednesday": 2,
+    "Thursday": 3,
+    "Friday": 4,
+    "Saturday": 5,
+    "Sunday": 6
+}
 try:
-	with open("events_timetable.json", "w") as f:
+	with open("uni_timetable.json", "w") as f:
 		f.write(timetable)
-		print("Output written to events_timetable.json")
+
+	objs = []
+	timetable = json.loads(timetable)
+	for event in timetable:
+		date = datetime.strftime(datetime.strptime(event['week_beginning'], "%d-%b-%Y") + timedelta(days=_days[event['day']]), "%d-%b-%Y")
+		# date above is calculated from week beginning
+		obj = {
+				"Date": date,
+				"Day": event['day'],
+				"Class Name": event['class_title'],
+				"Room": event['class_room'],
+				"Lecturer": event['class_lecturer'],
+				"Time": event['class_time'],
+				"Type": event['class_type']
+		}
+		objs.append(obj)
+
+	print(tabulate.tabulate(objs, headers="keys", tablefmt="grid"))
+	print("Dumped json file to uni_timetable.json")
 except:
-	print("Couldn't write output to file, dumping output...")
-	print(timetable)
+	print("Couldn't write output to file.")
